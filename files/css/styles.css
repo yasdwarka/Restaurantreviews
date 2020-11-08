@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css?family=Maven+Pro');
+
+html {
+    font-size: 10px;
+}
+body  {
+    background: #87c4b7;
+    font-family: 'Maven Pro', sans-serif;
+}
+
+.span{
+  
+  position: relative;
+  width: 1.2em;
+  height: 1.2em;
+  color: black;
+ 
+  
+}
+.high {
+  color: rgb(217, 211, 0);
+}

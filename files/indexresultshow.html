@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+  <head>
+   <title>The Map </title>
+     <link rel="stylesheet" href="../28.05/css/styles.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  </head>
+
+  <body onload = "loadMap()">
+    <h2>Restaurants</h2>
+    <div id = "map" style = "width:940px; height:840px;"></div>
+    
+   <div class="row">
+     
+	   </div>
+     <div class="map-overlay">
+            <div id="map"></div>
+            <div class="info-wrapper">
+                <div id="options" class="sort">
+                    <label for="sort">Sort By Rating</label>
+                    <select name="sort" id="sort">
+                        <option value="all">All</option>
+                        <option value="one">1</option>
+                        <option value="two">2</option>
+                        <option value="three">3</option>
+                        <option value="four">4</option>
+                        <option value="five">5</option>
+                    </select>
+                </div>
+                
+     <div id="right-panel">
+                    <h2>Results</h2>
+                                       
+
+		 <div class="row">
+    <div class="col-sm-8" id="places"></div>
+    <div class="col-sm-4" id="img-container"></div>
+	  </div>
+                   
+                   
+                    <button id="more"> More results</button>
+				</div>
+				<div id="restaurant-info">
+            <div class="container">
+                <div id="street-view">
+                    <div id="street-view-window">
+                        <div id="pano" width="150px" height="250px"></div>
+                    </div>
+                    <div id="photo"></div>
+                </div>
+                <div id="see-photo"></div>
+                <div class="restaurant">
+                    <div class="button-menu">
+                    </div>
+                    <h2 class="restaurant-name" id="name"></h2>
+                    <p class="restaurant-details" id="address"></p>
+                    <p class="restaurant-details" id="telephone"></p>
+                    <p class="restaurant-details" id="website"></p>
+                    <div class="review-header">
+                        <h3 class="title">Reviews</h3>
+                    </div>
+                    <div id="reviews"></div>
+                    <div id="show-message"></div>
+                    <button class="main-button" id="add-review-button" onclick="createReviewWindow()">Add a Review</button>
+                    <div id="review-window"></div>
+                    <button type="submit" id="review-submit" class="main-button" onclick="submitReview()">Add Review</button>
+                </div>
+            </div>
+            
+        </div>
+	  
+     
+      <script>
+			  var map;
+		        var markers = [];
+   
+        function loadMap() {
+          // Initialize Google Maps
+         let pos = {
+				lat: 0,
+				lng: 0,
+			};
+			const mapOptions = {
+				center: pos,
+				zoom: 15,
+				streetViewControl: false,
+				styles: [{
+					stylers: [{
+							hue: "#00ff6f"
+						},
+						{
+							saturation: -50
+						}
+					]
+				}]
+			}
+			
+			const infoWindow = new google.maps.InfoWindow({
+				content: document.getElementById('information')
+			})
+          const map = new google.maps.Map(document.getElementById("map"), mapOptions);
+          var service = new google.maps.places.PlacesService(map);					
+					
+          // Load JSON Data
+          const hotelMarkers =  getJSONMarkers();
+
+          // Initialize json Markers
+          for(hotel of hotelMarkers) {
+			  var image = '..//Pinkflag.png';
+            let marker = new google.maps.Marker({
+              map: map,
+              position: new google.maps.LatLng(hotel.location[0], hotel.location[1],hotel.location[2]),
+              title: hotel.name,
+				icon: image,
+				rating:hotel.rating
+            })
+			}
+			
+		
+ // Try HTML5 geolocation.
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(function(position) {
+					var pos = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+					};
+
+					infoWindow.setPosition(pos);
+					infoWindow.setContent('You are here');
+					infoWindow.open(map);
+					map.setCenter(pos);
+					var image = '..//Pinkflag.png';
+					let marker = new google.maps.Marker({
+						position: pos,
+						icon: image,
+						map: map
+					});
+					
+       let places = new google.maps.places.PlacesService(map);
+			var service = new google.maps.places.PlacesService(map);
+			
+			var request ={
+			location: pos ,
+			radius:500,
+			types: ['restaurant']
+		}
+			
+			   
+			var getNextPage = null;
+			var moreButton =document.getElementById('more');
+			moreButton.onclick = function (){
+				moreButton.disabled =true;
+				if(getNextPage)getNextPage();
+			};
+				
+		    service.nearbySearch(request,callback);
+			
+           function callback(results,status,pagination){
+			   
+			   if(status === google.maps.places.PlacesServiceStatus.OK){
+				  
+				   for(var i =0; i < results.length ; i++){
+					    createMarker(results[i]);
+					    
+				   }
+				 
+			   }
+			  
+		   let resultArray = new Array;	
+			   
+ resultArray = results.concat(hotelMarkers);
+			   
+			console.log(resultArray);
+		   
+			
+	//reset markers and results 
+            function clearMarkers() {
+                for (let i = 0; i < markers.length; i++) {
+                    if (markers[i]) {
+                        markers[i].setMap(null);
+                    }
+                }
+                markers = [];
+            }
+
+            function clearResults() {
+                let results = document.getElementById("places");
+                while (results.childNodes[0]) {
+                    results.removeChild(results.childNodes[0]);
+                }
+            }
+
+					// Json Hotel restaurants
+					myFunction(resultArray);
+function myFunction(resultArray) {
+  var out = "";
+  var i;
+  for(i = 0; i < resultArray.length; i++) {
+   out += '<a href="' + resultArray[i].name + '">' + 
+    resultArray[i].name + '  '  +Math.floor(resultArray[i].rating) +'</a><br>';
+  }
+  document.getElementById("places").innerHTML = out;
+}
+		   
+					// googlesearch restaurants
+		function createMarker(place){
+			var placeloc = place.geometry.location;
+			 var bounds = new google.maps.LatLngBounds();
+			var placesList = document.getElementById('places');
+			var marker = new google.maps.Marker({
+				map: map,
+				position : place.geometry.location,
+				place_id: place.id,
+				rating:place.rating,
+				photo_reference:place.reference,
+				zindex:5
+			});
+									
+ var li = document.createElement('li');
+
+    li.textContent = place.name +' ' + place.rating ;
+
+    placesList.appendChild(li);
+			
+	
+	 bounds.extend(place.geometry.location);
+				
+		}
+		    
+		   
+			   buildRating(resultArray);
+function buildRating(resultArray){
+	resultArray.forEach(function(v){
+  	createRatingElement(v.rating)
+  });
+	
+}
+       var numberOfStars;     
+createRatingElement(numberOfStars);
+					
+function createRatingElement(numberOfStars){
+	var wrapper = document.createElement('div');
+	for (var i = 1; i <= 5; i++) {
+  	var span = document.createElement('span');
+	span.innerHTML = (i <= numberOfStars ? '&#10025;' : '&#10029;');
+    span.className = (i <= numberOfStars ? 'high' : '');
+    wrapper.appendChild(span);
+  }
+  document.getElementById("img-container").appendChild(wrapper)
+	
+};
+		   
+	var out="";
+	
+	
+	function adddetails(resultArray){
+	  for(i = 0; i < resultArray.length; i++){
+   out += '<a href="' + resultArray[i].name + '">' + 
+    resultArray[i].name + resultArray[i].rating  +'</a><br>';
+		  
+  }
+  document.getElementById("places").innerHTML = out;
+	}
+		   }
+				}, function() {
+					handleLocationError(true, infoWindow, map.getCenter());
+				});
+			} else {
+				// Browser doesn't support Geolocation
+				handleLocationError(false, infoWindow, map.getCenter());
+			}
+
+		function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+			infoWindow.setPosition(pos);
+			infoWindow.setContent(browserHasGeolocation ?
+				'Error: The Geolocation service failed.' :
+				'Error: Your browser doesn\'t support geolocation.');
+			infoWindow.open(map);
+		}
+		
+				
+      google.maps.event.addDomListener(window, 'load', loadMap,);
+			
+		}
+		  
+      </script>
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA5jVZVfaKGx4Xhun36-oXP3XQ1MpQrCPM&libraries=places&callback=loadMap" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=ChIJGRf5X48edkgRKuw4hC2cjVM&key=AIzaSyA5jVZVfaKGx4Xhun36-oXP3XQ1MpQrCPM"></script>
+            <script src="../28.05/places.js"></script>
+           <script src="../28.05/jquery-3.2.1.min.js"></script>
+		 </div>
+	  </div>
+
+  </body>
+</html>
